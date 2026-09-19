@@ -23,16 +23,21 @@ def grid():
 
 def drawx(x, y):
     """Draw X player."""
-    line(x, y, x + 133, y + 133)
-    line(x, y + 133, x + 133, y)
+    color('blue')
+    width(6)
+    margin = 22
+    line(x + margin, y + margin, x + 133 - margin, y + 133 - margin)
+    line(x + margin, y + 133 - margin, x + 133 - margin, y + margin)
 
 
 def drawo(x, y):
     """Draw O player."""
+    color('red')
+    width(6)
     up()
-    goto(x + 67, y + 5)
+    goto(x + 67, y + 22)
     down()
-    circle(62)
+    circle(45)
 
 
 def floor(value):
@@ -40,22 +45,66 @@ def floor(value):
     return ((value + 200) // 133) * 133 - 200
 
 
-state = {'player': 0}
+state = {'player': 0, 'board': {}, 'game_over': False}
 players = [drawx, drawo]
+
+
+def winner(board, player):
+    """Return True when player has completed a row, column, or diagonal."""
+    lines = [
+        [(0, 0), (1, 0), (2, 0)],
+        [(0, 1), (1, 1), (2, 1)],
+        [(0, 2), (1, 2), (2, 2)],
+        [(0, 0), (0, 1), (0, 2)],
+        [(1, 0), (1, 1), (1, 2)],
+        [(2, 0), (2, 1), (2, 2)],
+        [(0, 0), (1, 1), (2, 2)],
+        [(0, 2), (1, 1), (2, 0)],
+    ]
+    return any(all(board.get(cell) == player for cell in line) for line in lines)
+
+
+def finish(message):
+    """Finish the game and display its result."""
+    state['game_over'] = True
+    title('Tic Tac Toe - ' + message)
+    print(message)
 
 
 def tap(x, y):
     """Draw X or O in tapped square."""
+    if state['game_over'] or not (-200 <= x < 200 and -200 <= y < 200):
+        return
+
+    column = int((x + 200) // 133)
+    row = int((y + 200) // 133)
+    cell = (column, row)
+
+    if cell in state['board']:
+        title('Tic Tac Toe - That square is already occupied')
+        return
+
     x = floor(x)
     y = floor(y)
     player = state['player']
     draw = players[player]
     draw(x, y)
+    state['board'][cell] = player
     update()
-    state['player'] = not player
+
+    symbol = 'X' if player == 0 else 'O'
+    if winner(state['board'], player):
+        finish(symbol + ' wins!')
+    elif len(state['board']) == 9:
+        finish('It is a tie!')
+    else:
+        state['player'] = not player
+        next_symbol = 'X' if state['player'] == 0 else 'O'
+        title('Tic Tac Toe - Turn: ' + next_symbol)
 
 
 setup(420, 420, 370, 0)
+title('Tic Tac Toe - Turn: X')
 hideturtle()
 tracer(False)
 grid()
